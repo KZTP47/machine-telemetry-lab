@@ -18,8 +18,9 @@ simulated = readings_from(sys.argv[1])
 sensor = readings_from(sys.argv[2]) if len(sys.argv) == 3 else []
 assert [item["temperatureC"] for item in simulated] == [62, 75, 86, 81]
 expected = {r["id"]: r for r in simulated + sensor}
+assert len(expected) == len(simulated) + len(sensor)
 thresholds = {r["id"]: 75 for r in simulated if r["temperatureC"] > 75}
-if sensor:
+if len(sys.argv) == 3:
     assert [item["temperatureC"] for item in sensor] == [30.125]
     thresholds[sensor[0]["id"]] = 28
 

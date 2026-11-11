@@ -9,8 +9,6 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
-    env:
-      MQTT_BROKER_CERT_DIR: ${{ runner.temp }}/machine-lab-certs/broker
     defaults:
       run:
         working-directory: backend
@@ -29,7 +27,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Make temporary TLS certificates
-        run: bash tests/create_test_certs.sh "$RUNNER_TEMP/machine-lab-certs"
+        run: |
+          work="$RUNNER_TEMP/machine-lab-certs"
+          bash tests/create_test_certs.sh "$work"
+          echo "MQTT_BROKER_CERT_DIR=$work/broker" >> "$GITHUB_ENV"
       - name: Build and start the services
         run: docker compose -f compose.yaml -f compose.sensor.yaml up --build -d
       - name: Verify MQTT delivery, readings and alerts
@@ -37,8 +38,8 @@ jobs:
       - name: Verify the external publisher and sensor input
         run: bash tests/run_edge_checks.sh ../edge "$RUNNER_TEMP/machine-lab-certs"
       - name: Show service logs on failure
-        if: failure()
+        if: failure() && env.MQTT_BROKER_CERT_DIR != ''
         run: docker compose -f compose.yaml -f compose.sensor.yaml logs --no-color
       - name: Remove demo containers and volumes
-        if: always()
+        if: always() && env.MQTT_BROKER_CERT_DIR != ''
         run: docker compose -f compose.yaml -f compose.sensor.yaml down --volumes
