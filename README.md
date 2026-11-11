@@ -37,6 +37,8 @@ The default limit is 75 °C. A reading of exactly 75 °C stays in the history. F
 
 ## For juniors and interns
 
+Start with the [illustrated beginner's guide (PDF)](docs/machine-telemetry-beginners-guide.pdf). It follows one temperature reading from the pump to the alert.
+
 Think of a laundry room with a thermometer on a dryer. Every time someone reads it, they write down the dryer number, the time and the temperature. The front desk passes a copy to the person keeping the log and another to maintenance. Maintenance only files a report when the dryer gets too hot.
 
 | Term | What it means here |
