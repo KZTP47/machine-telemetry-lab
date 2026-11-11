@@ -4,12 +4,6 @@ services:
     hostname: broker
     environment:
       EMQX_NODE__NAME: emqx@broker
-    healthcheck:
-      test: ["CMD", "emqx", "ctl", "status"]
-      interval: 5s
-      timeout: 5s
-      start_period: 15s
-      retries: 15
 
   telemetry:
     build:
@@ -22,9 +16,7 @@ services:
       DATABASE_PATH: /data/telemetry.db
     ports: ["127.0.0.1:5181:8080"]
     volumes: [telemetry-data:/data]
-    depends_on:
-      broker:
-        condition: service_healthy
+    depends_on: [broker]
 
   alerts:
     build:
@@ -37,9 +29,7 @@ services:
       DATABASE_PATH: /data/alerts.db
     ports: ["127.0.0.1:5182:8080"]
     volumes: [alert-data:/data]
-    depends_on:
-      broker:
-        condition: service_healthy
+    depends_on: [broker]
 
   simulator:
     profiles: [demo]
