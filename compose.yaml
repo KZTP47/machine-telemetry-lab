@@ -1,0 +1,59 @@
+services:
+  broker:
+    image: emqx/emqx:5.8.8
+    hostname: broker
+    environment:
+      EMQX_NODE__NAME: emqx@broker
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 15
+
+  telemetry:
+    build:
+      context: .
+      args:
+        PROJECT: Telemetry
+    command: ["Telemetry.dll"]
+    environment:
+      MQTT_HOST: broker
+      DATABASE_PATH: /data/telemetry.db
+    ports: ["127.0.0.1:5181:8080"]
+    volumes: [telemetry-data:/data]
+    depends_on:
+      broker:
+        condition: service_healthy
+
+  alerts:
+    build:
+      context: .
+      args:
+        PROJECT: Alerts
+    command: ["Alerts.dll"]
+    environment:
+      MQTT_HOST: broker
+      DATABASE_PATH: /data/alerts.db
+    ports: ["127.0.0.1:5182:8080"]
+    volumes: [alert-data:/data]
+    depends_on:
+      broker:
+        condition: service_healthy
+
+  simulator:
+    profiles: [demo]
+    build:
+      context: .
+      args:
+        PROJECT: Simulator
+    command: ["Simulator.dll"]
+    environment:
+      MQTT_HOST: broker
+      TELEMETRY_URL: http://telemetry:8080
+      ALERTS_URL: http://alerts:8080
+    depends_on: [telemetry, alerts]
+
+volumes:
+  telemetry-data:
+  alert-data:

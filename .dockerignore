@@ -1,0 +1,7 @@
+*
+!src/
+!src/**/
+!src/**/*.cs
+!src/**/*.csproj
+**/bin/
+**/obj/
