@@ -11,18 +11,18 @@ using MQTTnet.Protocol;
 namespace MachineTelemetry;
 
 public sealed class ReadingSubscriber(
-    string host, string clientId, ReadingStore store, Func<Reading, bool> shouldStore,
+    string host, string clientId, ReadingStore store, double? thresholdC,
     ILogger<ReadingSubscriber> logger) : BackgroundService
 {
     private volatile bool ready;
 
-    public static void Register(WebApplicationBuilder builder, string name, Func<Reading, bool> shouldStore)
+    public static void Register(WebApplicationBuilder builder, string name, double? thresholdC = null)
     {
         var host = builder.Configuration["MQTT_HOST"] ?? "localhost";
         var database = builder.Configuration["DATABASE_PATH"] ?? $"data/{name}.db";
         builder.Services.AddSingleton(_ => new ReadingStore(database));
         builder.Services.AddSingleton(services => new ReadingSubscriber(
-            host, $"machine-lab-{name}", services.GetRequiredService<ReadingStore>(), shouldStore,
+            host, $"machine-lab-{name}", services.GetRequiredService<ReadingStore>(), thresholdC,
             services.GetRequiredService<ILogger<ReadingSubscriber>>()));
         builder.Services.AddHostedService(services => services.GetRequiredService<ReadingSubscriber>());
     }
@@ -72,9 +72,9 @@ public sealed class ReadingSubscriber(
                     {
                         logger.LogWarning("Discarded an invalid machine reading");
                     }
-                    else if (shouldStore(reading))
+                    else if (thresholdC is null || reading.TemperatureC > thresholdC.Value)
                     {
-                        store.Save(reading);
+                        store.Save(reading, thresholdC);
                     }
                     await delivery.AcknowledgeAsync(stoppingToken);
                 }

@@ -9,17 +9,36 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    env:
+      MQTT_BROKER_CERT_DIR: ${{ runner.temp }}/machine-lab-certs/broker
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          path: backend
           persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: KZTP47/machine-telemetry-edge
+          ref: a2e0b7f7b8cf62a537aaaaf2ea85af7f09fdb01f
+          path: edge
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Make temporary TLS certificates
+        run: bash tests/create_test_certs.sh "$RUNNER_TEMP/machine-lab-certs"
       - name: Build and start the services
-        run: docker compose up --build -d
+        run: docker compose -f compose.yaml -f compose.sensor.yaml up --build -d
       - name: Verify MQTT delivery, readings and alerts
-        run: docker compose run --build --rm simulator
+        run: docker compose -f compose.yaml -f compose.sensor.yaml run --build --rm integration
+      - name: Verify the external publisher and sensor input
+        run: bash tests/run_edge_checks.sh ../edge "$RUNNER_TEMP/machine-lab-certs"
       - name: Show service logs on failure
         if: failure()
-        run: docker compose logs --no-color
+        run: docker compose -f compose.yaml -f compose.sensor.yaml logs --no-color
       - name: Remove demo containers and volumes
         if: always()
-        run: docker compose down --volumes
+        run: docker compose -f compose.yaml -f compose.sensor.yaml down --volumes

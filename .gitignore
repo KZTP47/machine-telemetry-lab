@@ -6,3 +6,7 @@
 .vs/
 .idea/
 *.user
+*.pem
+*.key
+*.pfx
+*.p12

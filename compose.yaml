@@ -4,6 +4,7 @@ services:
     hostname: broker
     environment:
       EMQX_NODE__NAME: emqx@broker
+    ports: ["127.0.0.1:1883:1883"]
 
   telemetry:
     build:
@@ -27,17 +28,18 @@ services:
     environment:
       MQTT_HOST: broker
       DATABASE_PATH: /data/alerts.db
+      ALARM_THRESHOLD_C: "${ALARM_THRESHOLD_C:-75}"
     ports: ["127.0.0.1:5182:8080"]
     volumes: [alert-data:/data]
     depends_on: [broker]
 
-  simulator:
-    profiles: [demo]
+  integration:
+    profiles: [test]
     build:
       context: .
       args:
-        PROJECT: Simulator
-    command: ["Simulator.dll"]
+        PROJECT: Integration
+    command: ["Integration.dll"]
     environment:
       MQTT_HOST: broker
       TELEMETRY_URL: http://telemetry:8080
